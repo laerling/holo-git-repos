@@ -20,122 +20,18 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
-	"strings"
 )
 
-
-/// A git repository entity for holo
-type entity struct {
-	fileName string
-	filePath string // use actual path object
-	url string
-	path string
-}
-
-/// Write msg to stderr and exit with a non-zero exit code
+/// fail writes the string msg to stderr and exits with a non-zero exit code.
 func fail(msg string) {
 	os.Stderr.Write([]byte(msg + "\n"))
 	os.Exit(1)
 }
 
-/// parse a line of format key=value
-func parseEntityLine(line []byte) [2]string {
-	lineSplit := strings.Split(string(line), "=")
-
-	if len(lineSplit) != 2 {
-		fail("Wrong line format")
-	}
-
-	lineSplit[0] = strings.TrimSpace(lineSplit[0])
-	lineSplit[1] = strings.TrimSpace(lineSplit[1])
-
-	return [2]string{lineSplit[0], lineSplit[1]}
-}
-
-/// parse a file into an entity instance
-func parseEntityFile(file io.Reader) (string, string) {
-	fileReader := bufio.NewReader(file)
-
-	// read url
-	errMsg := "Error reading entity file"
-	urlBytes, err := fileReader.ReadBytes('\n')
-	if err != nil && err != io.EOF { fail(errMsg) }
-	pathBytes, err := fileReader.ReadBytes('\n')
-	if err != nil && err != io.EOF { fail(errMsg) }
-
-	// split and clean
-	url := parseEntityLine(urlBytes)
-	if url[0] != "url" { fail("Erroneous key in entity file") }
-	path := parseEntityLine(pathBytes)
-	if path[0] != "path" { fail("Erroneous key in entity file") }
-
-	return url[1], path[1]
-}
-
-/// parse the entity with id ID
-func parseEntity(id string) (string, string) {
-
-	// find resource directory
-	resDirName := os.Getenv("HOLO_RESOURCE_DIR")
-	if resDirName == "" {
-		fail("HOLO_RESOURCE_DIR empty")
-	}
-
-	// parse entity file
-	entityFile, err := os.Open(resDirName + "/" + id)
-	if err != nil { fail("Cannot open entity with ID " + id) }
-	url, path := parseEntityFile(entityFile)
-
-	return url, path
-}
-
-/// parse all entities in holo resource directory
-func parseEntities() []entity {
-	resDirName := os.Getenv("HOLO_RESOURCE_DIR")
-	if resDirName == "" {
-		fail("HOLO_RESOURCE_DIR empty")
-	}
-
-	// open directory
-	resDir, err := os.Open(resDirName)
-	if err != nil {
-		fail("Cannot open HOLO_RESOURCE_DIR")
-	}
-
-	// read files
-	files, err := resDir.Readdir(0)
-	if err != nil {
-		fail("Cannot read files from HOLO_RESOURCE_DIR")
-	}
-
-	// parse files
-	entities := make([]entity, len(files))
-	for i, file := range(files) {
-
-		// open file
-		fileName := file.Name()
-		filePath := resDirName + "/" + fileName
-		// TODO use path joining instead of string concatenation
-		file, err := os.Open(filePath)
-		if err != nil {
-			fail("Cannot open file " + filePath)
-		}
-
-		// read and parse file
-		url, path := parseEntityFile(file)
-		entities[i] = entity { fileName, filePath, url, path }
-	}
-
-	return entities
-}
-
-/// The 'scan' operation.
-/// Scan $HOLO_RESOURCE_DIR for entities that can be provisioned
+/// holoScan executes the 'holo scan' operation. It scans $HOLO_RESOURCE_DIR for entities that can be provisioned.
 func holoScan() {
 	for _, entity := range(parseEntities()) {
 		fmt.Println("ENTITY: git-repo:" + entity.fileName)
@@ -145,8 +41,7 @@ func holoScan() {
 	}
 }
 
-/// The 'apply' operation.
-/// Apply entity with ID entityId
+/// holoApply executes the 'holo apply' operation. It applies the entity with ID entityId.
 func holoApply(entityId string) {
 
 	url, path := parseEntity(entityId)
@@ -161,8 +56,7 @@ func holoApply(entityId string) {
 	if err != nil { fail("Git failed") }
 }
 
-/// The 'diff' operation.
-/// Diff entity with ID entityId by calling git diff
+/// holoDiff executes the 'holo diff' operation. It generates a diff of the entity with ID entityId by calling `git diff`.
 func holoDiff(entityId string) {
 
 	_, path := parseEntity(entityId)

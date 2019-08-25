@@ -1,17 +1,17 @@
-main: $(wildcard *.go)
-	go build main.go
+holo-git-repos: $(wildcard *.go)
+	go build
 
 PHONY+=run
-run: main
+run: holo-git-repos
 	./$<
 
 PHONY+=scan
-scan: main
+scan: holo-git-repos
 	rm -f test/*~
 	HOLO_RESOURCE_DIR=./test ./$< scan
 
 PHONY+=clean
 clean:
-	rm -rf temptest test/*~
+	rm -rf holo-git-repos temptest test/*~
 
 PHONY: $(PHONY)
