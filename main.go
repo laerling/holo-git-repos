@@ -62,12 +62,15 @@ func holoDiff(entityId string) {
 	_, path := parseEntity(entityId)
 
 	// git fetch
-	err := exec.Command("git", "fetch", "-C", path).Run()
-	if err != nil { fail("Git fetch failed") }
+	cmd := exec.Command("git", "fetch")
+	cmd.Dir = path // FIXME use absolute path (without symlinks)
+	err := cmd.Run()
+	if err != nil { fail("Git fetch failed: " + err.Error()) }
 
 	// diff
-	cmd := exec.Command("git", "diff", "-C", path, "HEAD", "origin/master")
-	//cmd.Stdout = os.Stdout
+	cmd = exec.Command("git", "diff", "HEAD", "origin/master")
+	cmd.Dir = path // FIXME use absolute path (without symlinks)
+	// TODO cmd.Stdout = os.Stdout
 	cmd.Run()
 	if err != nil { fail("Git diff failed") }
 }
