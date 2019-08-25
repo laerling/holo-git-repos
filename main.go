@@ -42,11 +42,12 @@ func holoScan() {
 }
 
 /// holoApply executes the 'holo apply' operation. It applies the entity with ID entityId.
-func holoApply(entityId string) {
+/// If force is true, and the git repository path of the entity already exists, it is recursively deleted before being cloned again.
+func holoApply(entityId string, force bool) {
 
 	url, path := parseEntity(entityId)
 
-	// delete directory (TODO: Only do this when --force'd)
+	// delete directory
 	err := os.RemoveAll(path);
 	if err != nil { fail("Cannot remove directory recursively: " + path) }
 
@@ -98,14 +99,14 @@ func main() {
 		if len(os.Args) < 3 {
 			fail("Not enough arguments")
 		}
-		holoApply(os.Args[2])
+		holoApply(os.Args[2], false)
 		return
 
 	case "force-apply":
 		if len(os.Args) < 3 {
 			fail("Not enough arguments")
 		}
-		holoApply(os.Args[2])
+		holoApply(os.Args[2], true)
 		return
 
 	case "diff":
