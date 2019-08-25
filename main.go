@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 )
 
 /// fail writes the string msg to stderr and exits with a non-zero exit code.
@@ -64,15 +65,19 @@ func holoDiff(entityId string) {
 
 	// git fetch
 	cmd := exec.Command("git", "fetch")
-	cmd.Dir = path // FIXME use absolute path (without symlinks)
-	err := cmd.Run()
+	cmdDir, err := filepath.EvalSymlinks(path)
+	if err != nil { fail("Possibly dead symlink in path: " + path) }
+	cmd.Dir = cmdDir
+	err = cmd.Run()
 	if err != nil { fail("Git fetch failed: " + err.Error()) }
 
 	// diff
 	cmd = exec.Command("git", "diff", "HEAD", "origin/master")
-	cmd.Dir = path // FIXME use absolute path (without symlinks)
+	cmdDir, err = filepath.EvalSymlinks(path)
+	if err != nil { fail("Possibly dead symlink in path: " + path) }
+	cmd.Dir = cmdDir
 	// TODO cmd.Stdout = os.Stdout
-	cmd.Run()
+	err = cmd.Run()
 	if err != nil { fail("Git diff failed") }
 }
 
