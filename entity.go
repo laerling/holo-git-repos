@@ -39,7 +39,7 @@ func parseEntityLine(line []byte) [2]string {
 	lineSplit := strings.Split(string(line), "=")
 
 	if len(lineSplit) != 2 {
-		fail("Wrong line format")
+		fail("Wrong line format: '" + string(line) + "'")
 	}
 
 	lineSplit[0] = strings.TrimSpace(lineSplit[0])
@@ -106,8 +106,7 @@ func parseEntities() []entity {
 
 		// open file
 		fileName := file.Name()
-		filePath := resDirName + "/" + fileName
-		// TODO use path joining instead of string concatenation
+		filePath := resDirName + "/" + fileName // TODO use path joining instead of string concatenation
 		file, err := os.Open(filePath)
 		failOnErr(err, "Cannot open file " + filePath)
 
