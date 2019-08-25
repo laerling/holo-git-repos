@@ -55,9 +55,9 @@ func parseEntityFile(file io.Reader) (string, string) {
 	// read url
 	errMsg := "Error reading entity file"
 	urlBytes, err := fileReader.ReadBytes('\n')
-	if err != nil && err != io.EOF { fail(errMsg) }
+	if err != io.EOF { failOnErr(err, errMsg) }
 	pathBytes, err := fileReader.ReadBytes('\n')
-	if err != nil && err != io.EOF { fail(errMsg) }
+	if err != io.EOF { failOnErr(err, errMsg) }
 
 	// split and clean
 	url := parseEntityLine(urlBytes)
@@ -79,7 +79,7 @@ func parseEntity(id string) (string, string) {
 
 	// parse entity file
 	entityFile, err := os.Open(resDirName + "/" + id)
-	if err != nil { fail("Cannot open entity with ID " + id) }
+	failOnErr(err, "Cannot open entity with ID " + id)
 	url, path := parseEntityFile(entityFile)
 
 	return url, path
@@ -94,15 +94,11 @@ func parseEntities() []entity {
 
 	// open directory
 	resDir, err := os.Open(resDirName)
-	if err != nil {
-		fail("Cannot open HOLO_RESOURCE_DIR")
-	}
+	failOnErr(err, "Cannot open HOLO_RESOURCE_DIR")
 
 	// read files
 	files, err := resDir.Readdir(0)
-	if err != nil {
-		fail("Cannot read files from HOLO_RESOURCE_DIR")
-	}
+	failOnErr(err, "Cannot read files from HOLO_RESOURCE_DIR")
 
 	// parse files
 	entities := make([]entity, len(files))
@@ -113,9 +109,7 @@ func parseEntities() []entity {
 		filePath := resDirName + "/" + fileName
 		// TODO use path joining instead of string concatenation
 		file, err := os.Open(filePath)
-		if err != nil {
-			fail("Cannot open file " + filePath)
-		}
+		failOnErr(err, "Cannot open file " + filePath)
 
 		// read and parse file
 		url, path := parseEntityFile(file)

@@ -26,10 +26,17 @@ import (
 	"path/filepath"
 )
 
-/// fail writes the string msg to stderr and exits with a non-zero exit code.
+/// fail writes the string msg to stderr and exits with a non-zero exit code
 func fail(msg string) {
 	os.Stderr.Write([]byte(msg + "\n"))
 	os.Exit(1)
+}
+
+/// failOnErr calls fail with msg and the error message if err is non-nil. Otherwise it does nothing.
+func failOnErr(err error, msg string) {
+	if err != nil {
+		fail(msg + "\nError: " + err.Error())
+	}
 }
 
 /// holoScan executes the 'holo scan' operation. It scans $HOLO_RESOURCE_DIR for entities that can be provisioned.
@@ -50,12 +57,12 @@ func holoApply(entityId string, force bool) {
 
 	// delete directory
 	err := os.RemoveAll(path);
-	if err != nil { fail("Cannot remove directory recursively: " + path) }
+	failOnErr(err, "Cannot remove directory recursively: " + path)
 
 	// clone
 	// git doesn't output anything when run via exec, so no output redirection is needed
 	err = exec.Command("git", "clone", url, path).Run()
-	if err != nil { fail("Git failed") }
+	failOnErr(err, "Git failed")
 }
 
 /// holoDiff executes the 'holo diff' operation. It generates a diff of the entity with ID entityId by calling `git diff`.
@@ -66,19 +73,19 @@ func holoDiff(entityId string) {
 	// git fetch
 	cmd := exec.Command("git", "fetch")
 	cmdDir, err := filepath.EvalSymlinks(path)
-	if err != nil { fail("Possibly dead symlink in path: " + path) }
+	failOnErr(err, "Possibly dead symlink in path: " + path)
 	cmd.Dir = cmdDir
 	err = cmd.Run()
-	if err != nil { fail("Git fetch failed: " + err.Error()) }
+	failOnErr(err, "Git fetch failed")
 
 	// diff
 	cmd = exec.Command("git", "diff", "HEAD", "origin/master")
 	cmdDir, err = filepath.EvalSymlinks(path)
-	if err != nil { fail("Possibly dead symlink in path: " + path) }
+	failOnErr(err, "Possibly dead symlink in path: " + path)
 	cmd.Dir = cmdDir
-	// TODO cmd.Stdout = os.Stdout
+	cmd.Stdout = os.Stdout
 	err = cmd.Run()
-	if err != nil { fail("Git diff failed") }
+	failOnErr(err, "Git diff failed")
 }
 
 func main() {
