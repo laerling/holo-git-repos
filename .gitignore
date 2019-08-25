@@ -2,6 +2,7 @@
 \#*
 holo-git-repos
 test
+temptest
 
 # Binaries for programs and plugins
 *.exe
