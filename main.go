@@ -1,6 +1,6 @@
 /*******************************************************************************
 *
-* Copyright 2019 laerling <laerling@posteo.de>
+* Copyright 2019 lærling <laerling@posteo.de>
 *
 * This program is free software: you can redistribute it and/or modify it under
 * the terms of the GNU General Public License as published by the Free Software
@@ -77,6 +77,23 @@ func parseEntityFile(file io.Reader) (string, string) {
 	return url[1], path[1]
 }
 
+/// parse the entity with id ID
+func parseEntity(id string) (string, string) {
+
+	// find resource directory
+	resDirName := os.Getenv("HOLO_RESOURCE_DIR")
+	if resDirName == "" {
+		fail("HOLO_RESOURCE_DIR empty")
+	}
+
+	// parse entity file
+	entityFile, err := os.Open(resDirName + "/" + id)
+	if err != nil { fail("Cannot open entity with ID " + id) }
+	url, path := parseEntityFile(entityFile)
+
+	return url, path
+}
+
 /// parse all entities in holo resource directory
 func parseEntities() []entity {
 	resDirName := os.Getenv("HOLO_RESOURCE_DIR")
@@ -131,25 +148,34 @@ func holoScan() {
 /// The 'apply' operation.
 /// Apply entity with ID entityId
 func holoApply(entityId string) {
-	resDirName := os.Getenv("HOLO_RESOURCE_DIR")
-	if resDirName == "" {
-		fail("HOLO_RESOURCE_DIR empty")
-	}
 
-	// parse entity file
-	entityFile, err := os.Open(resDirName + "/" + entityId)
-	if err != nil { fail("Cannot open entity with ID " + entityId) }
-	url, path := parseEntityFile(entityFile)
-
-	// apply
+	url, path := parseEntity(entityId)
 
 	// delete directory (TODO: Only do this when --force'd)
-	err = os.RemoveAll(path);
+	err := os.RemoveAll(path);
 	if err != nil { fail("Cannot remove directory recursively: " + path) }
 
 	// clone
+	// git doesn't output anything when run via exec, so no output redirection is needed
 	err = exec.Command("git", "clone", url, path).Run()
 	if err != nil { fail("Git failed") }
+}
+
+/// The 'diff' operation.
+/// Diff entity with ID entityId by calling git diff
+func holoDiff(entityId string) {
+
+	_, path := parseEntity(entityId)
+
+	// git fetch
+	err := exec.Command("git", "fetch", "-C", path).Run()
+	if err != nil { fail("Git fetch failed") }
+
+	// diff
+	cmd := exec.Command("git", "diff", "-C", path, "HEAD", "origin/master")
+	//cmd.Stdout = os.Stdout
+	cmd.Run()
+	if err != nil { fail("Git diff failed") }
 }
 
 func main() {
@@ -172,15 +198,25 @@ func main() {
 		return
 
 	case "apply":
-	case"force-apply":
-		if len(os.Args) < 2 {
+		if len(os.Args) < 3 {
+			fail("Not enough arguments")
+		}
+		holoApply(os.Args[2])
+		return
+
+	case "force-apply":
+		if len(os.Args) < 3 {
 			fail("Not enough arguments")
 		}
 		holoApply(os.Args[2])
 		return
 
 	case "diff":
-		// TODO (entity ID in os.Args[2])
+		if len(os.Args) < 3 {
+			fail("Not enough arguments")
+		}
+		holoDiff(os.Args[2])
+		return
 
 	}
 }

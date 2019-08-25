@@ -12,6 +12,6 @@ scan: main
 
 PHONY+=clean
 clean:
-	rm main
+	rm -rf temptest test/*~
 
 PHONY: $(PHONY)
