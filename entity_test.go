@@ -27,37 +27,6 @@ import (
 )
 
 
-/// makeTemporaryFile creates a valid temporary entity file.
-/// It returns the whole path of the file (without expanded symlinks, though).
-func makeTemporaryFile(t *testing.T, baseDir string) string {
-
-	// create temporary entity file
-	file, err := ioutil.TempFile(baseDir, "")
-	assertErrNil(t, err, "Cannot open temporary file")
-	defer file.Close()
-
-	// write contents
-	_, err = file.WriteString("url=a\npath=b")
-	assertErrNil(t, err, "Cannot write to temporary file")
-
-	// get path
-	fileInfo, err := file.Stat()
-	assertErrNil(t, err, "Cannot stat temporary file")
-	return os.TempDir() + "/" + fileInfo.Name() // TODO use path joining instead of string concatenation
-}
-
-func assertErrNil(t *testing.T, err error, msg string) {
-	if err != nil {
-		t.Fatalf(msg)
-	}
-}
-
-func assertEq(t *testing.T, value interface{}, expected interface{}) {
-	if value != expected {
-		t.Fatalf("expected %v, found %v", value, expected)
-	}
-}
-
 func TestEntityParseLine(t *testing.T) {
 
 	// url
