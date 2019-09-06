@@ -26,7 +26,6 @@ import (
 	"testing"
 )
 
-
 func TestEntityParseLine(t *testing.T) {
 
 	// url
@@ -44,27 +43,31 @@ func TestEntityParseLine(t *testing.T) {
 func TestEntityParseFile(t *testing.T) {
 
 	// create temporary entity file
-	filePath := makeTemporaryFile(t, os.TempDir())
+	testUrl := "testUrl"
+	testPath := "testPath"
+	filePath := makeTemporaryEntityFile(t, os.TempDir(), testUrl, testPath)
 
 	// call function
 	file, err := os.Open(filePath)
 	assertErrNil(t, err, "Cannot re-open temporary file")
 	url, path := parseEntityFile(file)
-	assertEq(t, url, "a")
-	assertEq(t, path, "b")
+	assertEq(t, url, testUrl)
+	assertEq(t, path, testPath)
 }
 
 func TestEntityParse(t *testing.T) {
 
 	// create temporary entity file
-	filePath := makeTemporaryFile(t, os.TempDir())
+	testUrl := "testUrl"
+	testPath := "testPath"
+	filePath := makeTemporaryEntityFile(t, os.TempDir(), testUrl, testPath)
 	entityId := path.Base(filePath)
 
 	// call function
 	os.Setenv("HOLO_RESOURCE_DIR", path.Dir(filePath))
 	url, path := parseEntity(entityId)
-	assertEq(t, url, "a")
-	assertEq(t, path, "b")
+	assertEq(t, url, testUrl)
+	assertEq(t, path, testPath)
 }
 
 func TestEntities(t *testing.T) {
@@ -72,12 +75,14 @@ func TestEntities(t *testing.T) {
 	// create temporary directory with entity file
 	tempDir, err := ioutil.TempDir(os.TempDir(), "")
 	assertErrNil(t, err, "Cannot create temporary directory")
-	_ = makeTemporaryFile(t, tempDir)
+	testUrl := "testUrl"
+	testPath := "testPath"
+	_ = makeTemporaryEntityFile(t, tempDir, testUrl, testPath)
 
 	// call function
 	os.Setenv("HOLO_RESOURCE_DIR", tempDir)
 	entities := parseEntities()
 	assertEq(t, len(entities), 1)
-	assertEq(t, entities[0].url, "a")
-	assertEq(t, entities[0].path, "b")
+	assertEq(t, entities[0].url, testUrl)
+	assertEq(t, entities[0].path, testPath)
 }
