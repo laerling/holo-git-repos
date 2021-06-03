@@ -21,13 +21,12 @@ package main
 
 import (
 	"fmt"
-	"os/exec"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"testing"
 )
-
 
 /// makeTemporaryEntityFile creates a valid temporary entity file. It
 /// returns the whole path of the file (without expanded symlinks,
@@ -69,7 +68,7 @@ func assertEq(t *testing.T, value interface{}, expected interface{}) {
 /// used, because during test execution the binary does not yet
 /// exist. If an entity file must exist before holo is called, is has
 /// to be created before invoking getHoloOutput. Use
-/// makeTemporaryEntityFile.
+/// makeTemporaryEntityFile for that purpose.
 func getHoloOutput(t *testing.T, holoResourceDir string, args ...string) []byte {
 	fmt.Println("getHoloOutput: Calling " + os.Args[0])
 
@@ -82,13 +81,13 @@ func getHoloOutput(t *testing.T, holoResourceDir string, args ...string) []byte 
 
 	// call holo
 	os.Args = []string{"holo-git-repos"}
-	for _, arg := range(args) {
+	for _, arg := range args {
 		os.Args = append(os.Args, arg)
 	}
 	os.Setenv("HOLO_RESOURCE_DIR", holoResourceDir)
 	// FIXME: What if main calls exit?
 	cmd := exec.Command(os.Args[0], "apply")
-	cmd.Env = append(os.Environ(), "HOLO_RESOURCE_DIR=" + holoResourceDir)
+	cmd.Env = append(os.Environ(), "HOLO_RESOURCE_DIR="+holoResourceDir)
 	cmd.Run()
 	//main()
 

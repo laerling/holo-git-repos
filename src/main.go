@@ -41,7 +41,7 @@ func failOnErr(err error, msg string) {
 
 /// holoScan executes the 'holo scan' operation. It scans $HOLO_RESOURCE_DIR for entities that can be provisioned.
 func holoScan() {
-	for _, entity := range(parseEntities()) {
+	for _, entity := range parseEntities() {
 		fmt.Println("ENTITY: git-repo:" + entity.fileName)
 		fmt.Println("SOURCE: " + entity.filePath)
 		fmt.Println("url: " + entity.url)
@@ -56,8 +56,8 @@ func holoApply(entityId string, force bool) {
 	url, path := parseEntity(entityId)
 
 	// delete directory
-	err := os.RemoveAll(path);
-	failOnErr(err, "Cannot remove directory recursively: " + path)
+	err := os.RemoveAll(path)
+	failOnErr(err, "Cannot remove directory recursively: "+path)
 
 	// clone
 	// git doesn't output anything when run via exec, so no output redirection is needed
@@ -73,7 +73,7 @@ func holoDiff(entityId string) {
 	// git fetch
 	cmd := exec.Command("git", "fetch")
 	cmdDir, err := filepath.EvalSymlinks(path)
-	failOnErr(err, "Possibly dead symlink in path: " + path)
+	failOnErr(err, "Possibly dead symlink in path: "+path)
 	cmd.Dir = cmdDir
 	err = cmd.Run()
 	failOnErr(err, "Git fetch failed")
@@ -81,7 +81,7 @@ func holoDiff(entityId string) {
 	// diff
 	cmd = exec.Command("git", "diff", "HEAD", "origin/master")
 	cmdDir, err = filepath.EvalSymlinks(path)
-	failOnErr(err, "Possibly dead symlink in path: " + path)
+	failOnErr(err, "Possibly dead symlink in path: "+path)
 	cmd.Dir = cmdDir
 	cmd.Stdout = os.Stdout
 	err = cmd.Run()

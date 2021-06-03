@@ -27,7 +27,6 @@ import (
 	"testing"
 )
 
-
 func TestInfo(t *testing.T) {
 	holoOutput := getHoloOutput(t, "", "info")
 	expected := "MIN_API_VERSION=3\nMAX_API_VERSION=3\n"

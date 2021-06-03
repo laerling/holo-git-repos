@@ -55,15 +55,23 @@ func parseEntityFile(file io.Reader) (string, string) {
 	// read url
 	errMsg := "Error reading entity file"
 	urlBytes, err := fileReader.ReadBytes('\n')
-	if err != io.EOF { failOnErr(err, errMsg) }
+	if err != io.EOF {
+		failOnErr(err, errMsg)
+	}
 	pathBytes, err := fileReader.ReadBytes('\n')
-	if err != io.EOF { failOnErr(err, errMsg) }
+	if err != io.EOF {
+		failOnErr(err, errMsg)
+	}
 
 	// split and clean
 	url := parseEntityLine(urlBytes)
-	if url[0] != "url" { fail("Erroneous key in entity file") }
+	if url[0] != "url" {
+		fail("Erroneous key in entity file")
+	}
 	path := parseEntityLine(pathBytes)
-	if path[0] != "path" { fail("Erroneous key in entity file") }
+	if path[0] != "path" {
+		fail("Erroneous key in entity file")
+	}
 
 	return url[1], path[1]
 }
@@ -102,13 +110,13 @@ func parseEntities() []entity {
 
 	// parse files
 	entities := make([]entity, len(files))
-	for i, file := range(files) {
+	for i, file := range files {
 
 		// open file
 		fileName := file.Name()
 		filePath := resDirName + "/" + fileName // TODO use path joining instead of string concatenation
 		file, err := os.Open(filePath)
-		failOnErr(err, "Cannot open file " + filePath)
+		failOnErr(err, "Cannot open file "+filePath)
 
 		// read and parse file
 		url, path := parseEntityFile(file)
