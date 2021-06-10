@@ -53,7 +53,7 @@ func holoScan() {
 /// If force is true, and the git repository path of the entity already exists, it is recursively deleted before being cloned again.
 func holoApply(entityId string, force bool) {
 
-	url, path := parseEntity(entityId)
+	url, path, revision := parseEntity(entityId)
 
 	// delete directory
 	err := os.RemoveAll(path)

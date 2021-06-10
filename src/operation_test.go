@@ -48,7 +48,7 @@ func TestApply(t *testing.T) {
 	tempGitDir, err := ioutil.TempDir(os.TempDir(), "")
 	assertErrNil(t, err, "Cannot create temporary directory")
 	// create arbitraty file in git repo
-	_ = makeTemporaryEntityFile(t, tempGitDir, "", "")
+	_ = makeTemporaryEntityFile(t, tempGitDir, "", "", "")
 
 	// create empty temporary directory for cloning into
 	tempTargetDir, err := ioutil.TempDir(os.TempDir(), "")
@@ -57,7 +57,7 @@ func TestApply(t *testing.T) {
 	// create temporary directory with entity file
 	tempResourceDir, err := ioutil.TempDir(os.TempDir(), "")
 	assertErrNil(t, err, "Cannot create temporary directory")
-	entityFile := makeTemporaryEntityFile(t, tempResourceDir, tempGitDir, tempTargetDir)
+	entityFile := makeTemporaryEntityFile(t, tempResourceDir, tempGitDir, tempTargetDir, "tempRevision")
 	entityId := path.Base(entityFile)
 
 	// call holo and check output

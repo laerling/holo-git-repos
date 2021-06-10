@@ -30,8 +30,9 @@ import (
 type entity struct {
 	fileName string
 	filePath string // use actual path object
-	url string
-	path string
+	url      string
+	path     string
+	revision string
 }
 
 /// parseEntityLine parses a line of format 'key=value'.
@@ -49,7 +50,7 @@ func parseEntityLine(line []byte) [2]string {
 }
 
 /// parseEntityFile parses a file into an entity instance.
-func parseEntityFile(file io.Reader) (string, string) {
+func parseEntityFile(file io.Reader) (string, string, string) {
 	fileReader := bufio.NewReader(file)
 
 	// read url
@@ -59,6 +60,10 @@ func parseEntityFile(file io.Reader) (string, string) {
 		failOnErr(err, errMsg)
 	}
 	pathBytes, err := fileReader.ReadBytes('\n')
+	if err != io.EOF {
+		failOnErr(err, errMsg)
+	}
+	revisionBytes, err := fileReader.ReadBytes('\n')
 	if err != io.EOF {
 		failOnErr(err, errMsg)
 	}
@@ -72,12 +77,16 @@ func parseEntityFile(file io.Reader) (string, string) {
 	if path[0] != "path" {
 		fail("Erroneous key in entity file")
 	}
+	revision := parseEntityLine(revisionBytes)
+	if revision[0] != "path" {
+		fail("Erroneous key in entity file")
+	}
 
-	return url[1], path[1]
+	return url[1], path[1], revision[1]
 }
 
 /// parseEntity parses the entity with id ID.
-func parseEntity(id string) (string, string) {
+func parseEntity(id string) (string, string, string) {
 
 	// find resource directory
 	resDirName := os.Getenv("HOLO_RESOURCE_DIR")
@@ -87,10 +96,10 @@ func parseEntity(id string) (string, string) {
 
 	// parse entity file
 	entityFile, err := os.Open(resDirName + "/" + id)
-	failOnErr(err, "Cannot open entity with ID " + id)
-	url, path := parseEntityFile(entityFile)
+	failOnErr(err, "Cannot open entity with ID "+id)
+	url, path, revision := parseEntityFile(entityFile)
 
-	return url, path
+	return url, path, revision
 }
 
 /// parseEntities parses all entities in holo resource directory.
@@ -119,8 +128,8 @@ func parseEntities() []entity {
 		failOnErr(err, "Cannot open file "+filePath)
 
 		// read and parse file
-		url, path := parseEntityFile(file)
-		entities[i] = entity { fileName, filePath, url, path }
+		url, path, revision := parseEntityFile(file)
+		entities[i] = entity{fileName, filePath, url, path, revision}
 	}
 
 	return entities

@@ -27,47 +27,44 @@ import (
 )
 
 func TestEntityParseLine(t *testing.T) {
-
-	// url
-	result := parseEntityLine([]byte("url=ugh..."))
-	assertEq(t, result[0], "url")
-	assertEq(t, result[1], "ugh...")
-
-	// path
-	result = parseEntityLine([]byte("path=whatever"))
-	assertEq(t, result[0], "path")
-	assertEq(t, result[1], "whatever")
+	result := parseEntityLine([]byte("key=value"))
+	assertEq(t, result[0], "key")
+	assertEq(t, result[1], "value")
 }
 
-// "url=a\npath=b" is the only format currently accepted, therefore there's only one test for now
+// "url=a\npath=b\nrevision=c" is the only format currently accepted, therefore there's only one test for now
 func TestEntityParseFile(t *testing.T) {
 
 	// create temporary entity file
-	testUrl := "testUrl"
-	testPath := "testPath"
-	filePath := makeTemporaryEntityFile(t, os.TempDir(), testUrl, testPath)
+	testUrl := "TestEntityParseFile_testUrl"
+	testPath := "TestEntityParseFile_testPath"
+	testRevision := "TestEntityParseFile_testRevision"
+	filePath := makeTemporaryEntityFile(t, os.TempDir(), testUrl, testPath, testRevision)
 
 	// call function
 	file, err := os.Open(filePath)
 	assertErrNil(t, err, "Cannot re-open temporary file")
-	url, path := parseEntityFile(file)
+	url, path, revision := parseEntityFile(file)
 	assertEq(t, url, testUrl)
 	assertEq(t, path, testPath)
+	assertEq(t, revision, testRevision)
 }
 
 func TestEntityParse(t *testing.T) {
 
 	// create temporary entity file
-	testUrl := "testUrl"
-	testPath := "testPath"
-	filePath := makeTemporaryEntityFile(t, os.TempDir(), testUrl, testPath)
+	testUrl := "TestEntityParse_testUrl"
+	testPath := "TestEntityParse_testPath"
+	testRevision := "TestEntityParse_testRevision"
+	filePath := makeTemporaryEntityFile(t, os.TempDir(), testUrl, testPath, testRevision)
 	entityId := path.Base(filePath)
 
 	// call function
 	os.Setenv("HOLO_RESOURCE_DIR", path.Dir(filePath))
-	url, path := parseEntity(entityId)
+	url, path, revision := parseEntity(entityId)
 	assertEq(t, url, testUrl)
 	assertEq(t, path, testPath)
+	assertEq(t, revision, testRevision)
 }
 
 func TestEntities(t *testing.T) {
@@ -75,9 +72,10 @@ func TestEntities(t *testing.T) {
 	// create temporary directory with entity file
 	tempDir, err := ioutil.TempDir(os.TempDir(), "")
 	assertErrNil(t, err, "Cannot create temporary directory")
-	testUrl := "testUrl"
-	testPath := "testPath"
-	_ = makeTemporaryEntityFile(t, tempDir, testUrl, testPath)
+	testUrl := "TestEntities_testUrl"
+	testPath := "TestEntities_testPath"
+	testRevision := "TestEntities_testRevision"
+	_ = makeTemporaryEntityFile(t, tempDir, testUrl, testPath, testRevision)
 
 	// call function
 	os.Setenv("HOLO_RESOURCE_DIR", tempDir)
@@ -85,4 +83,5 @@ func TestEntities(t *testing.T) {
 	assertEq(t, len(entities), 1)
 	assertEq(t, entities[0].url, testUrl)
 	assertEq(t, entities[0].path, testPath)
+	assertEq(t, entities[0].revision, testRevision)
 }

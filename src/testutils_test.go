@@ -31,14 +31,14 @@ import (
 /// makeTemporaryEntityFile creates a valid temporary entity file. It
 /// returns the whole path of the file (without expanded symlinks,
 /// though).
-func makeTemporaryEntityFile(t *testing.T, baseDir string, url string, targetDir string) string {
+func makeTemporaryEntityFile(t *testing.T, baseDir string, url string, targetDir string, revision string) string {
 
 	// create temporary entity file
 	tempFile, err := ioutil.TempFile(baseDir, "")
 	assertErrNil(t, err, "Cannot open temporary file")
 
 	// write contents
-	_, err = tempFile.WriteString("url=" + url + "\npath=" + targetDir)
+	_, err = tempFile.WriteString("url=" + url + "\npath=" + targetDir + "\nrevision=" + revision)
 	assertErrNil(t, err, "Cannot write to temporary file")
 
 	// get file name
