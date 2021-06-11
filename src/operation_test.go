@@ -39,9 +39,8 @@ func TestScan(t *testing.T) {
 }
 */
 
-/// TestApply does not (yet) test that the contents of the git repo
-/// are correct after cloning. It depends only on git's exit status
-/// for success.
+// TestApply does not test that the contents of the git repo are correct after cloning. It depends only on git's exit status
+// for success.
 func TestApply(t *testing.T) {
 
 	// create temporary git directory for cloning

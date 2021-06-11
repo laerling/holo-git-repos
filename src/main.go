@@ -26,21 +26,21 @@ import (
 	"path/filepath"
 )
 
-/// fail writes the string msg to stderr and exits with a non-zero exit code
+// fail writes the string msg to stderr and exits with a non-zero exit code
 func fail(msg string) {
 	fmt.Fprintln(os.Stderr, msg)
 	os.Exit(1)
 }
 
-/// failOnErr calls fail with msg and the error message if err is non-nil. Otherwise it does nothing.
+// failOnErr calls fail with msg and the error message if err is non-nil. Otherwise it does nothing.
 func failOnErr(err error, msg string) {
 	if err != nil {
 		fail(msg + "\nError: " + err.Error())
 	}
 }
 
-/// runGit builds and runs a git command.
-/// If printOutput is true, the output of the command is printed to stdout.
+// runGit builds and runs a git command.
+// If printOutput is true, the output of the command is printed to stdout.
 func runGit(printOutput bool, arguments ...string) {
 	// git doesn't output anything when run via exec, so no
 	// output redirection is needed
@@ -52,8 +52,8 @@ func runGit(printOutput bool, arguments ...string) {
 	failOnErr(err, fmt.Sprintln("Running git with arguments", arguments, "failed"))
 }
 
-/// runGitInRepo builds and runs a git command in an existing repository.
-/// If printOutput is true, the output of the command is printed to stdout.
+// runGitInRepo builds and runs a git command in an existing repository.
+// If printOutput is true, the output of the command is printed to stdout.
 func runGitInRepo(printOutput bool, repoPath string, arguments ...string) {
 	// git doesn't output anything when run via exec, so no
 	// output redirection is needed
@@ -66,8 +66,8 @@ func runGitInRepo(printOutput bool, repoPath string, arguments ...string) {
 	failOnErr(err, fmt.Sprintln("Running git with arguments", arguments, "failed"))
 }
 
-/// isGitRepo checks whether the given path is a git repository.
-/// A path counts a git repository if it is a directory containing a .git directory
+// isGitRepo checks whether the given path is a git repository.
+// A path counts a git repository if it is a directory containing a .git directory
 func isGitRepo(path string) bool {
 	_, err := os.Stat(path + "/.git")
 	if err == nil {
@@ -80,7 +80,7 @@ func isGitRepo(path string) bool {
 	return false
 }
 
-/// holoScan executes the 'holo scan' operation. It scans $HOLO_RESOURCE_DIR for entities that can be provisioned.
+// holoScan executes the 'holo scan' operation. It scans $HOLO_RESOURCE_DIR for entities that can be provisioned.
 func holoScan() {
 	for _, entity := range parseEntities() {
 		fmt.Println("ENTITY: git-repo:" + entity.fileName)
@@ -90,12 +90,12 @@ func holoScan() {
 	}
 }
 
-/// holoApply executes the 'holo apply' operation. It applies the entity with ID entityId.
-/// It clones the repository and, if revision is not emptystring, checks out that revision.
-/// If force is true, and the git repository path of the entity already exists,
-/// it is recursively deleted before being cloned again.
-/// If force is false, and the git repository path of the entity already exists,
-/// the message defined in holo-plugin-interface(7) is printed to FD 3.
+// holoApply executes the 'holo apply' operation. It applies the entity with ID entityId.
+// It clones the repository and, if revision is not emptystring, checks out that revision.
+// If force is true, and the git repository path of the entity already exists,
+// it is recursively deleted before being cloned again.
+// If force is false, and the git repository path of the entity already exists,
+// the message defined in holo-plugin-interface(7) is printed to FD 3.
 func holoApply(entityId string, force bool) {
 
 	url, path, revision := parseEntity(entityId)
@@ -137,9 +137,9 @@ func holoApply(entityId string, force bool) {
 	}
 }
 
-/// holoDiff executes the 'holo diff' operation.
-/// It generates a diff of the entity with ID entityId by calling `git diff`.
-/// The diff is between the worktree and the revision that was checked out at clone time.
+// holoDiff executes the 'holo diff' operation.
+// It generates a diff of the entity with ID entityId by calling `git diff`.
+// The diff is between the worktree and the revision that was checked out at clone time.
 func holoDiff(entityId string) {
 
 	_, path, revision := parseEntity(entityId)

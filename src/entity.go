@@ -26,7 +26,7 @@ import (
 	"strings"
 )
 
-/// entity represents a git repository entity for holo.
+// entity represents a git repository entity for holo.
 type entity struct {
 	fileName string
 	filePath string // use actual path object
@@ -35,8 +35,8 @@ type entity struct {
 	revision string
 }
 
-/// parseEntityLine parses a line of format 'key=value'.
 func parseEntityLine(line []byte) [2]string {
+// parseEntityLine parses a line of format 'key=value'.
 	lineSplit := strings.Split(string(line), "=")
 
 	if len(lineSplit) != 2 {
@@ -49,7 +49,6 @@ func parseEntityLine(line []byte) [2]string {
 	return [2]string{lineSplit[0], lineSplit[1]}
 }
 
-/// parseEntityFile parses a file into an entity instance.
 func parseEntityFile(file io.Reader) (string, string, string) {
 	fileReader := bufio.NewReader(file)
 
@@ -83,9 +82,10 @@ func parseEntityFile(file io.Reader) (string, string, string) {
 	}
 
 	return url[1], path[1], revision[1]
+// parseEntityFile parses a file into an entity instance.
 }
 
-/// parseEntity parses the entity with id ID.
+// parseEntity parses the entity with id ID.
 func parseEntity(id string) (string, string, string) {
 
 	// find resource directory
@@ -102,7 +102,7 @@ func parseEntity(id string) (string, string, string) {
 	return url, path, revision
 }
 
-/// parseEntities parses all entities in holo resource directory.
+// parseEntities parses all entities in holo resource directory.
 func parseEntities() []entity {
 	resDirName := os.Getenv("HOLO_RESOURCE_DIR")
 	if resDirName == "" {

@@ -28,9 +28,9 @@ import (
 	"testing"
 )
 
-/// makeTemporaryEntityFile creates a valid temporary entity file. It
-/// returns the whole path of the file (without expanded symlinks,
-/// though).
+// makeTemporaryEntityFile creates a valid temporary entity file. It
+// returns the whole path of the file (without expanded symlinks,
+// though).
 func makeTemporaryEntityFile(t *testing.T, baseDir string, url string, targetDir string, revision string) string {
 
 	// create temporary entity file
@@ -54,21 +54,36 @@ func assertErrNil(t *testing.T, err error, msg string) {
 	}
 }
 
-/// assertEq fails if value and expected are not equal.
+// assertEq fails if value and expected are not equal.
 func assertEq(t *testing.T, value interface{}, expected interface{}) {
 	if value != expected {
 		t.Fatalf("\nExpected: %v\nFound %v\n", expected, value)
 	}
 }
 
-/// getHoloOutput calls the main function with HOLO_RESOURCE_DIR set
-/// and args as arguments and returns its stdout output as a byte
-/// slice. args must not contain the program's name, it is inserted by
-/// getHoloOutput. This approach to calling holo from within tests is
-/// used, because during test execution the binary does not yet
-/// exist. If an entity file must exist before holo is called, is has
-/// to be created before invoking getHoloOutput. Use
-/// makeTemporaryEntityFile for that purpose.
+// getFunctionOutput calls a function and returns whatever that
+// function printed to stdout as a string. If you want to pass
+// arguments to that function, let the caller define a lambda
+// expression that calls the function witht the desired arguments and
+// pass that expression to getFunctionOutput.
+// For example:
+//
+// func greet(person string) {
+//         fmt.Println("Hello, " + person)
+// }
+// func TestGreet(t *testing.T) {
+//         f := func(){greet("you!")}
+//         assertEq(t, getFunctionOutput(f), "Hello, you!\n")
+// }
+// TODO replace calls to this functions by calls to getFunctionOutput, once that's working, or let this function call getFunctionOutput with the main function and env variables set appropriately
+// getHoloOutput calls the main function with HOLO_RESOURCE_DIR set
+// and args as arguments and returns its stdout output as a byte
+// slice. args must not contain the program's name, it is inserted by
+// getHoloOutput. This approach to calling holo from within tests is
+// used, because during test execution the binary does not yet
+// exist. If an entity file must exist before holo is called, is has
+// to be created before invoking getHoloOutput. Use
+// makeTemporaryEntityFile for that purpose.
 func getHoloOutput(t *testing.T, holoResourceDir string, args ...string) []byte {
 	fmt.Println("getHoloOutput: Calling " + os.Args[0])
 
