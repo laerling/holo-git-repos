@@ -27,9 +27,9 @@ import (
 )
 
 func TestEntityParseLine(t *testing.T) {
-	result := parseEntityLine([]byte("key=value"))
-	assertEq(t, result[0], "key")
-	assertEq(t, result[1], "value")
+	k, v := parseEntityLine([]byte("key=value"))
+	assertEq(t, k, "key")
+	assertEq(t, v, "value")
 }
 
 // "url=a\npath=b\nrevision=c" is the only format currently accepted, therefore there's only one test for now

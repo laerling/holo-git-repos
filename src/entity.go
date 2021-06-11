@@ -35,54 +35,35 @@ type entity struct {
 	revision string
 }
 
-func parseEntityLine(line []byte) [2]string {
 // parseEntityLine parses a line of format 'key=value'.
+func parseEntityLine(line []byte) (key string, value string) {
 	lineSplit := strings.Split(string(line), "=")
 
 	if len(lineSplit) != 2 {
 		fail("Wrong line format: '" + string(line) + "'")
 	}
 
-	lineSplit[0] = strings.TrimSpace(lineSplit[0])
-	lineSplit[1] = strings.TrimSpace(lineSplit[1])
-
-	return [2]string{lineSplit[0], lineSplit[1]}
+	key = strings.TrimSpace(lineSplit[0])
+	value = strings.TrimSpace(lineSplit[1])
+        return
 }
 
-func parseEntityFile(file io.Reader) (string, string, string) {
-	fileReader := bufio.NewReader(file)
-
-	// read url
-	errMsg := "Error reading entity file"
-	urlBytes, err := fileReader.ReadBytes('\n')
-	if err != io.EOF {
-		failOnErr(err, errMsg)
-	}
-	pathBytes, err := fileReader.ReadBytes('\n')
-	if err != io.EOF {
-		failOnErr(err, errMsg)
-	}
-	revisionBytes, err := fileReader.ReadBytes('\n')
-	if err != io.EOF {
-		failOnErr(err, errMsg)
-	}
-
-	// split and clean
-	url := parseEntityLine(urlBytes)
-	if url[0] != "url" {
-		fail("Erroneous key in entity file")
-	}
-	path := parseEntityLine(pathBytes)
-	if path[0] != "path" {
-		fail("Erroneous key in entity file")
-	}
-	revision := parseEntityLine(revisionBytes)
-	if revision[0] != "path" {
-		fail("Erroneous key in entity file")
-	}
-
-	return url[1], path[1], revision[1]
 // parseEntityFile parses a file into an entity instance.
+func parseEntityFile(file io.Reader) (url string, path string, revision string) {
+        var values [3]string
+        fileReader := bufio.NewReader(file)
+        for i, key := range [3]string{"url", "path", "revision"} {
+                lineBytes, err := fileReader.ReadBytes('\n')
+                if err != io.EOF {
+                        failOnErr(err, "Error reading entity file")
+                }
+                k, v := parseEntityLine(lineBytes)
+                if k != key {
+                        fail("Erroneous key in entity file. Expected " + key + ", found " + k)
+                }
+                values[i] = v
+        }
+        return values[0], values[1], values[2]
 }
 
 // parseEntity parses the entity with id ID.
