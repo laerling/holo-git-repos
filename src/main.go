@@ -86,6 +86,7 @@ func holoScan() {
 		fmt.Println("ENTITY: git-repo:" + entity.fileName)
 		fmt.Println("SOURCE: " + entity.filePath)
 		fmt.Println("url: " + entity.url)
+		fmt.Println("revision: " + entity.revision)
 		fmt.Println("clone into: " + entity.path)
 	}
 }
