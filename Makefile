@@ -1,6 +1,7 @@
 PHONY+=build
 build: holo-git-repos
 holo-git-repos: $(wildcard src/*.go)
+	hash goimports && goimports -w $+
 	hash gofmt && gofmt -w $+
 	go build -o "$@" $+
 
