@@ -28,7 +28,7 @@ import (
 
 /// fail writes the string msg to stderr and exits with a non-zero exit code
 func fail(msg string) {
-	os.Stderr.Write([]byte(msg + "\n"))
+	fmt.Fprintln(os.Stderr, msg)
 	os.Exit(1)
 }
 
@@ -37,6 +37,47 @@ func failOnErr(err error, msg string) {
 	if err != nil {
 		fail(msg + "\nError: " + err.Error())
 	}
+}
+
+/// runGit builds and runs a git command.
+/// If printOutput is true, the output of the command is printed to stdout.
+func runGit(printOutput bool, arguments ...string) {
+	// git doesn't output anything when run via exec, so no
+	// output redirection is needed
+	cmd := exec.Command("git", arguments...)
+	if printOutput {
+		cmd.Stdout = os.Stdout
+	}
+	err := cmd.Run()
+	failOnErr(err, fmt.Sprintln("Running git with arguments", arguments, "failed"))
+}
+
+/// runGitInRepo builds and runs a git command in an existing repository.
+/// If printOutput is true, the output of the command is printed to stdout.
+func runGitInRepo(printOutput bool, repoPath string, arguments ...string) {
+	// git doesn't output anything when run via exec, so no
+	// output redirection is needed
+	arguments = append([]string{"-C", repoPath}, arguments...)
+	cmd := exec.Command("git", arguments...)
+	if printOutput {
+		cmd.Stdout = os.Stdout
+	}
+	err := cmd.Run()
+	failOnErr(err, fmt.Sprintln("Running git with arguments", arguments, "failed"))
+}
+
+/// isGitRepo checks whether the given path is a git repository.
+/// A path counts a git repository if it is a directory containing a .git directory
+func isGitRepo(path string) bool {
+	_, err := os.Stat(path + "/.git")
+	if err == nil {
+		return true
+	}
+	// if we get this far, there is indeed a relevant error
+	if !os.IsNotExist(err) {
+		failOnErr(err, fmt.Sprintln("Cannot stat", path+"/.git/"))
+	}
+	return false
 }
 
 /// holoScan executes the 'holo scan' operation. It scans $HOLO_RESOURCE_DIR for entities that can be provisioned.
@@ -50,42 +91,63 @@ func holoScan() {
 }
 
 /// holoApply executes the 'holo apply' operation. It applies the entity with ID entityId.
-/// If force is true, and the git repository path of the entity already exists, it is recursively deleted before being cloned again.
+/// It clones the repository and, if revision is not emptystring, checks out that revision.
+/// If force is true, and the git repository path of the entity already exists,
+/// it is recursively deleted before being cloned again.
+/// If force is false, and the git repository path of the entity already exists,
+/// the message defined in holo-plugin-interface(7) is printed to FD 3.
 func holoApply(entityId string, force bool) {
 
 	url, path, revision := parseEntity(entityId)
 
-	// delete directory
-	err := os.RemoveAll(path)
-	failOnErr(err, "Cannot remove directory recursively: "+path)
+	// check if directory already exists
+	_, err := os.Stat(path)
+	exists := !os.IsNotExist(err)
+	if exists && err != nil {
+		failOnErr(err, fmt.Sprintln("Cannot stat path", path))
+	}
 
-	// clone
-	// git doesn't output anything when run via exec, so no output redirection is needed
-	err = exec.Command("git", "clone", url, path).Run()
-	failOnErr(err, "Git failed")
+	// if it exists, force is needed
+	if exists {
+		// If it is NOT a git repository, warn the user
+		if !isGitRepo(path) {
+			fmt.Fprintln(os.Stderr, "WARNING:", path, "is not a git repository")
+		}
+
+		// delete directory if forced to
+		if force {
+			err := os.RemoveAll(path)
+			failOnErr(err, "Cannot remove recursively: "+path)
+		} else {
+			_, err := os.NewFile(3, "holo").Write([]byte("requires --force to overwrite\n"))
+			failOnErr(err, "Can't write to file descriptor 3")
+			return
+		}
+	}
+
+	// if it doesn't exist or we're forced, create it
+	if !exists || force {
+		// We need to do clone and checkout separately, because
+		// revision can be a branch/tag name or a commit ID, so it
+		// can't reliably be specified to git-clone
+		runGit(false, "clone", url, path)
+		if revision != "" {
+			runGitInRepo(false, path, "checkout", revision)
+		}
+	}
 }
 
-/// holoDiff executes the 'holo diff' operation. It generates a diff of the entity with ID entityId by calling `git diff`.
+/// holoDiff executes the 'holo diff' operation.
+/// It generates a diff of the entity with ID entityId by calling `git diff`.
+/// The diff is between the worktree and the revision that was checked out at clone time.
 func holoDiff(entityId string) {
 
-	_, path := parseEntity(entityId)
-
-	// git fetch
-	cmd := exec.Command("git", "fetch")
-	cmdDir, err := filepath.EvalSymlinks(path)
+	_, path, revision := parseEntity(entityId)
+	repo, err := filepath.EvalSymlinks(path)
 	failOnErr(err, "Possibly dead symlink in path: "+path)
-	cmd.Dir = cmdDir
-	err = cmd.Run()
-	failOnErr(err, "Git fetch failed")
 
-	// diff
-	cmd = exec.Command("git", "diff", "HEAD", "origin/master")
-	cmdDir, err = filepath.EvalSymlinks(path)
-	failOnErr(err, "Possibly dead symlink in path: "+path)
-	cmd.Dir = cmdDir
-	cmd.Stdout = os.Stdout
-	err = cmd.Run()
-	failOnErr(err, "Git diff failed")
+	// The diff is between the worktree and the revision that was checked out at clone time.
+	runGitInRepo(true, repo, "diff", revision+"..HEAD")
 }
 
 func main() {
