@@ -28,16 +28,41 @@ import (
 )
 
 func TestInfo(t *testing.T) {
-	holoOutput := getHoloOutput(t, "", "info")
 	expected := "MIN_API_VERSION=3\nMAX_API_VERSION=3\n"
-	assertEq(t, string(holoOutput), expected)
+
+	// since we're calling the main function we want to pass
+	// arguments via os.Args, just as if we had executed the
+	// binary.
+	origArgs := os.Args
+	os.Args = []string{"holo", "info"}
+	holoOutput := getFunctionOutput(main)
+	os.Args = origArgs
+	assertEq(t, holoOutput, expected)
 }
 
-/* TODO
 func TestScan(t *testing.T) {
-	t.Fatalf("unimplemented")
+
+	// create temporary directory with entity file
+	tempDir, err := ioutil.TempDir(os.TempDir(), "")
+	assertErrNil(t, err, "Cannot create temporary directory")
+	testUrl := "TestScan_testUrl"
+	testPath := "TestScan_testPath"
+	testRevision := "TestScan_testRevision"
+        entityFilePath1 := makeTemporaryEntityFile(t, tempDir, testUrl, testPath, testRevision)
+        entityFileName1 := path.Base(entityFilePath1)
+	//entityFileName2 := makeTemporaryEntityFile(t, tempDir, testUrl, testPath, testRevision)
+
+	// call function and check output
+	expected := "ENTITY: git-repo:" + entityFileName1
+	expected += "\nSOURCE: " + entityFilePath1
+	expected += "\nurl: " + testUrl
+	expected += "\nrevision: " + testRevision
+	expected += "\nclone into: " + testPath
+	expected += "\n"
+	os.Setenv("HOLO_RESOURCE_DIR", tempDir)
+	scanOutput := getFunctionOutput(holoScan)
+        assertEq(t, scanOutput, expected)
 }
-*/
 
 // TestApply does not test that the contents of the git repo are correct after cloning. It depends only on git's exit status
 // for success.
@@ -60,16 +85,11 @@ func TestApply(t *testing.T) {
 	entityId := path.Base(entityFile)
 
 	// call holo and check output
-	holoOutput := getHoloOutput(t, tempResourceDir, "apply", entityId)
 	// TODO
+	holoOutput := getHoloOutput(t, tempResourceDir, "apply", entityId)
 	fmt.Println("TestApply: holo apply output: '" + string(holoOutput) + "'")
 }
 
-func TestApply2(t *testing.T) {
-	fail("stuff: " + os.Args[0])
-}
-
-/*
 func TestApplyForce(t *testing.T) {
 	t.Fatalf("unimplemented")
 }
@@ -77,4 +97,3 @@ func TestApplyForce(t *testing.T) {
 func TestDiff(t *testing.T) {
 	t.Fatalf("unimplemented")
 }
-*/

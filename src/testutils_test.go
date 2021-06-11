@@ -20,7 +20,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -75,6 +77,23 @@ func assertEq(t *testing.T, value interface{}, expected interface{}) {
 //         f := func(){greet("you!")}
 //         assertEq(t, getFunctionOutput(f), "Hello, you!\n")
 // }
+func getFunctionOutput(f func()) string {
+	r, w, err := os.Pipe()
+	failOnErr(err, "Cannot syscall pipe")
+
+	// call function with changed stdout
+	oldStdout := os.Stdout
+	os.Stdout = w
+	f()
+	os.Stdout = oldStdout
+	w.Close()
+
+	// read function output
+	var buf bytes.Buffer
+	io.Copy(&buf, r)
+	return buf.String()
+}
+
 // TODO replace calls to this functions by calls to getFunctionOutput, once that's working, or let this function call getFunctionOutput with the main function and env variables set appropriately
 // getHoloOutput calls the main function with HOLO_RESOURCE_DIR set
 // and args as arguments and returns its stdout output as a byte
