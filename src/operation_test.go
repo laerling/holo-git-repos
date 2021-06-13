@@ -20,7 +20,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -28,16 +27,17 @@ import (
 )
 
 func TestInfo(t *testing.T) {
-	expected := "MIN_API_VERSION=3\nMAX_API_VERSION=3\n"
-
 	// since we're calling the main function we want to pass
 	// arguments via os.Args, just as if we had executed the
 	// binary.
 	origArgs := os.Args
 	os.Args = []string{"holo", "info"}
-	holoOutput := getFunctionOutput(main)
+	mainOutput := getFunctionOutput(main)
 	os.Args = origArgs
-	assertEq(t, holoOutput, expected)
+
+	// check output
+	expected := "MIN_API_VERSION=3\nMAX_API_VERSION=3\n"
+	assertEq(t, mainOutput, expected)
 }
 
 func TestScan(t *testing.T) {
@@ -61,37 +61,76 @@ func TestScan(t *testing.T) {
 	expected += "\n"
 	os.Setenv("HOLO_RESOURCE_DIR", tempDir)
 	scanOutput := getFunctionOutput(holoScan)
-        assertEq(t, scanOutput, expected)
+	assertEq(t, scanOutput, expected)
 }
 
-// TestApply does not test that the contents of the git repo are correct after cloning. It depends only on git's exit status
-// for success.
+// holoApply: Target does not exist
+// => clone, checkout
+// basically like first-time provisioning
+func TestApplyNotexistentTarget(t *testing.T) {
+	t.Fatalf("unimplemented")
+}
+
+// holoApply: Target exists and not forced
+// => "needs force"
+func TestApplyExistNoForce(t *testing.T) {
+	t.Fatalf("unimplemented")
+}
+
+// holoApply: Target exists and forced and target is repo
+// => checkout
+func TestApplyForceRepo(t *testing.T) {
+	t.Fatalf("unimplemented")
+}
+
+// holoApply: Target exists and forced and target is repo and revision non-existent
+// => checkout fails, delete, clone, checkout
+func TestApplyForceRepoNonexistentRevision(t *testing.T) {
+	t.Fatalf("unimplemented")
+}
+
+// holoApply: Target exists and forced and target is no repo
+// => delete, clone, checkout
+func TestApplyForceNoRepo(t *testing.T) {
+	t.Fatalf("unimplemented")
+}
+
+// TODO: Remove this general test in favor of the specific tests above
 func TestApply(t *testing.T) {
 
-	// create temporary git directory for cloning
+	// create git repo with content
 	tempGitDir, err := ioutil.TempDir(os.TempDir(), "")
-	assertErrNil(t, err, "Cannot create temporary directory")
-	// create arbitraty file in git repo
+	assertErrNil(t, err, "Cannot create temporary directory for git repo")
+	t.Log("tempGitDir (where to clone from):", tempGitDir)
+	runGitInDir(false, tempGitDir, "init", "-b", "main")
 	_ = makeTemporaryEntityFile(t, tempGitDir, "", "", "")
+	runGitInDir(false, tempGitDir, "add", "-A")
+	runGitInDir(false, tempGitDir, "commit", "-m", "TestApply")
 
 	// create empty temporary directory for cloning into
 	tempTargetDir, err := ioutil.TempDir(os.TempDir(), "")
-	assertErrNil(t, err, "Cannot create temporary directory")
+	assertErrNil(t, err, "Cannot create temporary directory for cloning into")
+	tempTargetDir += "/repo" // name of the cloned repo
+	t.Log("tempTargetDir (where to clone to):", tempTargetDir)
 
 	// create temporary directory with entity file
 	tempResourceDir, err := ioutil.TempDir(os.TempDir(), "")
-	assertErrNil(t, err, "Cannot create temporary directory")
-	entityFile := makeTemporaryEntityFile(t, tempResourceDir, tempGitDir, tempTargetDir, "tempRevision")
+	assertErrNil(t, err, "Cannot create temporary directory for entity file")
+	t.Log("tempResourceDir (where the entity file lies):", tempResourceDir)
+	entityFile := makeTemporaryEntityFile(t, tempResourceDir, tempGitDir, tempTargetDir, "")
 	entityId := path.Base(entityFile)
+	t.Log("entityFile / entityId:", entityFile, "/", entityId)
 
-	// call holo and check output
-	// TODO
-	holoOutput := getHoloOutput(t, tempResourceDir, "apply", entityId)
-	fmt.Println("TestApply: holo apply output: '" + string(holoOutput) + "'")
-}
+	// call main function as if binary had been called
+	// Positive case - expecting clone to succeed
+	os.Setenv("HOLO_RESOURCE_DIR", tempResourceDir)
+	origArgs := os.Args
+	os.Args = []string{"holo", "apply", entityId}
+	mainOutput := getFunctionOutput(main)
+	os.Args = origArgs
 
-func TestApplyForce(t *testing.T) {
-	t.Fatalf("unimplemented")
+	// check output
+	assertEq(t, mainOutput, "")
 }
 
 func TestDiff(t *testing.T) {

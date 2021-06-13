@@ -41,29 +41,22 @@ func failOnErr(err error, msg string) {
 
 // runGit builds and runs a git command.
 // If printOutput is true, the output of the command is printed to stdout.
-func runGit(printOutput bool, arguments ...string) {
+func runGit(printOutput bool, arguments ...string) error {
 	// git doesn't output anything when run via exec, so no
 	// output redirection is needed
 	cmd := exec.Command("git", arguments...)
 	if printOutput {
 		cmd.Stdout = os.Stdout
 	}
-	err := cmd.Run()
-	failOnErr(err, fmt.Sprintln("Running git with arguments", arguments, "failed"))
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
-// runGitInRepo builds and runs a git command in an existing repository.
+// runGitInDir builds and runs a git command in an existing repository.
 // If printOutput is true, the output of the command is printed to stdout.
-func runGitInRepo(printOutput bool, repoPath string, arguments ...string) {
-	// git doesn't output anything when run via exec, so no
-	// output redirection is needed
+func runGitInDir(printOutput bool, repoPath string, arguments ...string) error {
 	arguments = append([]string{"-C", repoPath}, arguments...)
-	cmd := exec.Command("git", arguments...)
-	if printOutput {
-		cmd.Stdout = os.Stdout
-	}
-	err := cmd.Run()
-	failOnErr(err, fmt.Sprintln("Running git with arguments", arguments, "failed"))
+	return runGit(printOutput, arguments...)
 }
 
 // isGitRepo checks whether the given path is a git repository.
@@ -80,6 +73,33 @@ func isGitRepo(path string) bool {
 	return false
 }
 
+// clone clones the git repo from url to path, then checks out the
+// given revision if it is not emptystring.
+func clone(url string, path string, revision string) error {
+	// We need to do clone and checkout separately, because
+	// revision can be a branch/tag name or a commit ID, so it
+	// can't reliably be specified to git-clone
+
+	// clone
+	err := runGit(false, "clone", url, path)
+	if err != nil {
+		return err
+	}
+
+	// checkout
+	if revision != "" {
+		return checkout(path, revision)
+	}
+
+	return nil
+}
+
+// checkout checks out the given revision in the git repository
+// denoted by path.
+func checkout(path string, revision string) error {
+	return runGitInDir(false, path, "checkout", revision)
+}
+
 // holoScan executes the 'holo scan' operation. It scans $HOLO_RESOURCE_DIR for entities that can be provisioned.
 func holoScan() {
 	for _, entity := range parseEntities() {
@@ -93,10 +113,11 @@ func holoScan() {
 
 // holoApply executes the 'holo apply' operation. It applies the entity with ID entityId.
 // It clones the repository and, if revision is not emptystring, checks out that revision.
-// If force is true, and the git repository path of the entity already exists,
-// it is recursively deleted before being cloned again.
-// If force is false, and the git repository path of the entity already exists,
-// the message defined in holo-plugin-interface(7) is printed to FD 3.
+// If the target already exists, the behavior depends on a few things:
+// - If force is false, return control to holo with the corresponding message
+// - If the target is a git repo, try checking out the revision
+// - If the target is not a git repo or the checkout failed (supposedly because
+//   the revision does not exist), delete it before clone and checkout is done
 func holoApply(entityId string, force bool) {
 
 	url, path, revision := parseEntity(entityId)
@@ -104,37 +125,45 @@ func holoApply(entityId string, force bool) {
 	// check if directory already exists
 	_, err := os.Stat(path)
 	exists := !os.IsNotExist(err)
-	if exists && err != nil {
-		failOnErr(err, fmt.Sprintln("Cannot stat path", path))
-	}
 
-	// if it exists, force is needed
+	// if the target already exists, the behavior depends on a few things
 	if exists {
-		// If it is NOT a git repository, warn the user
-		if !isGitRepo(path) {
-			fmt.Fprintln(os.Stderr, "WARNING:", path, "is not a git repository")
-		}
+		// fail if we encountered an error
+		failOnErr(err, fmt.Sprintln("Cannot stat path", path))
 
-		// delete directory if forced to
-		if force {
-			err := os.RemoveAll(path)
-			failOnErr(err, "Cannot remove recursively: "+path)
-		} else {
+		// check if it's even a repo
+		isRepo := isGitRepo(path)
+
+		// if we're not forced, return with a warning
+		if !force {
+			// if it's not even a repo, the user might want to know what they're doing
+			if !isRepo {
+				fmt.Fprintln(os.Stderr, "WARNING:", path, "is not a git repository")
+			}
 			_, err := os.NewFile(3, "holo").Write([]byte("requires --force to overwrite\n"))
 			failOnErr(err, "Can't write to file descriptor 3")
 			return
 		}
+
+		// if it is a repo, let's try a simple checkout first
+		err = nil
+		if isRepo {
+			err = checkout(path, revision)
+		}
+
+		// if it's not a repo or checkout failed, delete and reclone it
+		if !isRepo || err != nil {
+			err := os.RemoveAll(path)
+			failOnErr(err, "Cannot remove recursively: "+path)
+			exists = false
+		}
 	}
 
-	// if it doesn't exist or we're forced, create it
-	if !exists || force {
-		// We need to do clone and checkout separately, because
-		// revision can be a branch/tag name or a commit ID, so it
-		// can't reliably be specified to git-clone
-		runGit(false, "clone", url, path)
-		if revision != "" {
-			runGitInRepo(false, path, "checkout", revision)
-		}
+	// if the target does not yet exist, clone it
+	// we cannot use an else branch, since exists might have been reassigned above
+	if !exists {
+		err = clone(url, path, revision)
+		failOnErr(err, "Cannot clone repository "+url+" into "+path+" with revision "+revision)
 	}
 }
 
@@ -148,7 +177,7 @@ func holoDiff(entityId string) {
 	failOnErr(err, "Possibly dead symlink in path: "+path)
 
 	// The diff is between the worktree and the revision that was checked out at clone time.
-	runGitInRepo(true, repo, "diff", revision+"..HEAD")
+	runGitInDir(true, repo, "diff", revision+"..HEAD")
 }
 
 func main() {
