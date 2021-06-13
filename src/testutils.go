@@ -1,6 +1,6 @@
 /*******************************************************************************
 *
-* Copyright 2019 lærling <laerling@posteo.de>
+* Copyright 2021 laerling <laerling@posteo.de>
 *
 * This program is free software: you can redistribute it and/or modify it under
 * the terms of the GNU General Public License as published by the Free Software
