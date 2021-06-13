@@ -21,11 +21,9 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
 	"testing"
 )
@@ -92,42 +90,4 @@ func getFunctionOutput(f func()) string {
 	var buf bytes.Buffer
 	io.Copy(&buf, r)
 	return buf.String()
-}
-
-// TODO replace calls to this functions by calls to getFunctionOutput, once that's working, or let this function call getFunctionOutput with the main function and env variables set appropriately
-// getHoloOutput calls the main function with HOLO_RESOURCE_DIR set
-// and args as arguments and returns its stdout output as a byte
-// slice. args must not contain the program's name, it is inserted by
-// getHoloOutput. This approach to calling holo from within tests is
-// used, because during test execution the binary does not yet
-// exist. If an entity file must exist before holo is called, is has
-// to be created before invoking getHoloOutput. Use
-// makeTemporaryEntityFile for that purpose.
-func getHoloOutput(t *testing.T, holoResourceDir string, args ...string) []byte {
-	fmt.Println("getHoloOutput: Calling " + os.Args[0])
-
-	// redirect stdout to temporary file
-	tempFile, err := ioutil.TempFile("", "")
-	assertErrNil(t, err, "Cannot open temporary file")
-	oldStdout := os.Stdout // save old stdout fd
-	stdoutFile := os.NewFile(tempFile.Fd(), "/dev/stdout")
-	os.Stdout = stdoutFile
-
-	// call holo
-	os.Args = []string{"holo-git-repos"}
-	for _, arg := range args {
-		os.Args = append(os.Args, arg)
-	}
-	os.Setenv("HOLO_RESOURCE_DIR", holoResourceDir)
-	// FIXME: What if main calls exit?
-	cmd := exec.Command(os.Args[0], "apply")
-	cmd.Env = append(os.Environ(), "HOLO_RESOURCE_DIR="+holoResourceDir)
-	cmd.Run()
-	//main()
-
-	// end redirection and return output
-	os.Stdout = oldStdout
-	mainOutput, err := ioutil.ReadFile(tempFile.Name())
-	assertErrNil(t, err, "Cannot read temporary file")
-	return mainOutput
 }
