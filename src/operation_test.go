@@ -48,8 +48,8 @@ func TestScan(t *testing.T) {
 	testUrl := "TestScan_testUrl"
 	testPath := "TestScan_testPath"
 	testRevision := "TestScan_testRevision"
-        entityFilePath1 := makeTemporaryEntityFile(t, tempDir, testUrl, testPath, testRevision)
-        entityFileName1 := path.Base(entityFilePath1)
+	entityFilePath1 := makeTemporaryEntityFile(t, tempDir, testUrl, testPath, testRevision)
+	entityFileName1 := path.Base(entityFilePath1)
 	//entityFileName2 := makeTemporaryEntityFile(t, tempDir, testUrl, testPath, testRevision)
 
 	// call function and check output

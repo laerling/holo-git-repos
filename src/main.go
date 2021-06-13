@@ -155,7 +155,7 @@ func main() {
 
 	// check arguments
 	if len(os.Args) < 2 {
-                fail("holo-git-repos: Not enough arguments")
+		fail("holo-git-repos: Not enough arguments")
 	}
 
 	// actions
@@ -172,21 +172,21 @@ func main() {
 
 	case "apply":
 		if len(os.Args) < 3 {
-                        fail("holo-git-repos apply: Missing entity argument")
+			fail("holo-git-repos apply: Missing entity argument")
 		}
 		holoApply(os.Args[2], false)
 		return
 
 	case "force-apply":
 		if len(os.Args) < 3 {
-                        fail("holo-git-repos force-apply: Missing entity argument")
+			fail("holo-git-repos force-apply: Missing entity argument")
 		}
 		holoApply(os.Args[2], true)
 		return
 
 	case "diff":
 		if len(os.Args) < 3 {
-                        fail("holo-git-repos diff: Missing entity argument")
+			fail("holo-git-repos diff: Missing entity argument")
 		}
 		holoDiff(os.Args[2])
 		return

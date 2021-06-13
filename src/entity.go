@@ -45,25 +45,25 @@ func parseEntityLine(line []byte) (key string, value string) {
 
 	key = strings.TrimSpace(lineSplit[0])
 	value = strings.TrimSpace(lineSplit[1])
-        return
+	return
 }
 
 // parseEntityFile parses a file into an entity instance.
 func parseEntityFile(file io.Reader) (url string, path string, revision string) {
-        var values [3]string
-        fileReader := bufio.NewReader(file)
-        for i, key := range [3]string{"url", "path", "revision"} {
-                lineBytes, err := fileReader.ReadBytes('\n')
-                if err != io.EOF {
-                        failOnErr(err, "Error reading entity file")
-                }
-                k, v := parseEntityLine(lineBytes)
-                if k != key {
-                        fail("Erroneous key in entity file. Expected " + key + ", found " + k)
-                }
-                values[i] = v
-        }
-        return values[0], values[1], values[2]
+	var values [3]string
+	fileReader := bufio.NewReader(file)
+	for i, key := range [3]string{"url", "path", "revision"} {
+		lineBytes, err := fileReader.ReadBytes('\n')
+		if err != io.EOF {
+			failOnErr(err, "Error reading entity file")
+		}
+		k, v := parseEntityLine(lineBytes)
+		if k != key {
+			fail("Erroneous key in entity file. Expected " + key + ", found " + k)
+		}
+		values[i] = v
+	}
+	return values[0], values[1], values[2]
 }
 
 // parseEntity parses the entity with id ID.
